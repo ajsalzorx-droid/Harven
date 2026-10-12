@@ -56,10 +56,10 @@ export default function AboutPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 relative">
             {[
-               { img: "https://images.unsplash.com/photo-1592686082490-b98a318cefc1?w=300&q=80", title: "Global Sourcing", step: "01", desc: "We identify premium origins and negotiate farm-direct volume allocations." },
+               { img: "/images/process-source.png", title: "Global Sourcing", step: "01", desc: "We identify premium origins and negotiate farm-direct volume allocations." },
                { img: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=300&q=80", title: "Quality Sorting", step: "02", desc: "Stringent pre-shipment laboratory inspections, sorting, and grading." },
-               { img: "https://images.unsplash.com/photo-1494412574643-ff11b0a5eb19?w=300&q=80", title: "Trade & Contracting", step: "03", desc: "Transparent, secure contracting via our Dubai headquarters." },
-               { img: "https://images.unsplash.com/photo-1586528116311-ad8ed7c80a30?w=300&q=80", title: "Freight & Delivery", step: "04", desc: "End-to-end logistics handling ensuring port-to-port accuracy." }
+               { img: "/images/process-trade.png", title: "Trade & Contracting", step: "03", desc: "Transparent, secure contracting via our Dubai headquarters." },
+               { img: "/images/process-deliver.png", title: "Freight & Delivery", step: "04", desc: "End-to-end logistics handling ensuring port-to-port accuracy." }
             ].map(item => (
               <div key={item.step} className="text-center p-4 group">
                 <div className="w-[110px] h-[110px] rounded-full overflow-hidden mx-auto mb-6 border-[3px] border-cream-dark bg-white transition-all duration-400 group-hover:border-sage group-hover:scale-[1.06] group-hover:shadow-[0_8px_30px_rgba(45,90,61,0.1)] pt-[2px] pr-[1px]">

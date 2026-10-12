@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from 'react'
+import { http, isHttpError } from '@/lib/http'
 import { Button } from '@/components/ui/Button'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
 export default function AdminLogin() {
@@ -18,21 +18,14 @@ export default function AdminLogin() {
     setError('')
     
 
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (error) {
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('mock')) {
-         setError("Mock DB mode: Use harvenllc@gmail.com / harven2024 to login.")
-      } else {
-         setError(error.message)
-      }
-    } else {
+    try {
+      await http.post('/api/admin/login', { email, password })
       router.push('/admin')
       router.refresh()
+    } catch (err) {
+      setError(isHttpError(err) && err.response
+        ? (err.response.data as { error?: string })?.error || 'Login failed'
+        : 'Network error. Please try again.')
     }
     setLoading(false)
   }

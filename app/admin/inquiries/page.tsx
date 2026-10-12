@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { adminFetch } from '@/lib/admin/api-client'
 import { Search, Mail, Phone, Building2, Package, Globe, ExternalLink, RefreshCw, Terminal, Trash2 } from 'lucide-react'
 
 export default function InquiriesCMS() {
@@ -15,16 +15,7 @@ export default function InquiriesCMS() {
     setLoading(true)
     setError(null)
     try {
-      const supabase = createClient()
-      const { data, error: fetchErr } = await supabase
-        .from('inquiries')
-        .select('*')
-        .order('created_at', { ascending: false })
-      
-      if (fetchErr) {
-        console.error(fetchErr)
-        setError("Failed to fetch inquiries. Check database connection.")
-      }
+      const { items: data } = await adminFetch<{ items: any[] }>('/api/admin/data/inquiries')
 
       if (data) {
         setInquiries(data)
@@ -44,13 +35,10 @@ export default function InquiriesCMS() {
 
   const updateStatus = async (id: string, newStatus: string) => {
      try {
-       const supabase = createClient()
-       const { error: updateErr } = await supabase.from('inquiries').update({ status: newStatus }).eq('id', id)
-       if (!updateErr) {
-         setInquiries(prev => prev.map(inv => inv.id === id ? { ...inv, status: newStatus } : inv))
-         if (selectedInquiry?.id === id) {
-           setSelectedInquiry({ ...selectedInquiry, status: newStatus })
-         }
+       await adminFetch(`/api/admin/data/inquiries/${id}`, { method: 'PATCH', body: JSON.stringify({ status: newStatus }) })
+       setInquiries(prev => prev.map(inv => inv.id === id ? { ...inv, status: newStatus } : inv))
+       if (selectedInquiry?.id === id) {
+         setSelectedInquiry({ ...selectedInquiry, status: newStatus })
        }
      } catch (err) {
        console.error(err)
@@ -60,16 +48,12 @@ export default function InquiriesCMS() {
   const deleteInquiry = async (id: string) => {
     if (!confirm("Are you sure you want to delete this inquiry? This action cannot be undone.")) return
     try {
-      const supabase = createClient()
-      const { error: deleteErr } = await supabase.from('inquiries').delete().eq('id', id)
-      if (!deleteErr) {
-        setInquiries(prev => prev.filter(inv => inv.id !== id))
-        setSelectedInquiry(null)
-      } else {
-        alert("Failed to delete inquiry: " + deleteErr.message)
-      }
-    } catch (err) {
+      await adminFetch(`/api/admin/data/inquiries/${id}`, { method: 'DELETE' })
+      setInquiries(prev => prev.filter(inv => inv.id !== id))
+      setSelectedInquiry(null)
+    } catch (err: any) {
       console.error(err)
+      alert("Failed to delete inquiry: " + (err.message || 'Unknown error'))
     }
   }
 

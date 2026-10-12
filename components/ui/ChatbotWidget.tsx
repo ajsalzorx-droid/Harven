@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import { http, getErrorMessage } from '@/lib/http'
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, X, Send, Bot, Loader2 } from 'lucide-react';
 
@@ -36,14 +37,8 @@ export function ChatbotWidget() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [...messages, userMessage] }),
-      });
-
-      const data = await response.json();
-      if (response.ok && data.content) {
+      const { data } = await http.post('/api/chat', { messages: [...messages, userMessage] }, { timeout: 60000 });
+      if (data.content) {
         setMessages(prev => [...prev, { role: 'assistant', content: data.content }]);
       } else {
         const errorMsg = data.error || "Invalid response from server";
@@ -53,7 +48,7 @@ export function ChatbotWidget() {
       console.error("Chat error:", error);
       let friendlyError = "I'm currently experiencing a high volume of requests. Please try again in a moment or contact us at harvenllc@gmail.com.";
       
-      if (error.message.includes("API Key Missing")) {
+      if (getErrorMessage(error).includes("API Key Missing")) {
         friendlyError = "The AI Assistant is currently in maintenance mode (Configuration Required). Please contact support.";
       }
       

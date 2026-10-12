@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from 'react'
+import { http } from '@/lib/http'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, FileText, Image as ImageIcon, Box, Bot, Inbox, Settings, Menu, X, LogOut, Award, Monitor } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -16,8 +16,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleSignOut = async () => {
     try {
-      const supabase = createClient()
-      await supabase.auth.signOut()
+      await http.post('/api/admin/logout')
       window.location.href = '/admin/login'
     } catch (err) {
       console.error(err)

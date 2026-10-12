@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react'
+import { http } from '@/lib/http'
 import { useParams } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Loader2, CheckCircle2, ArrowRight } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 import { motion } from 'framer-motion'
 
 export default function LandingPage() {
@@ -19,16 +19,14 @@ export default function LandingPage() {
   useEffect(() => {
     const fetchPage = async () => {
       if (!slug) return;
-      const supabase = createClient()
-      const { data } = await supabase
-        .from('landing_pages')
-        .select('*')
-        .eq('slug', slug)
-        .eq('is_published', true)
-        .single()
-      
-      if (data) {
-        setPageData(data)
+      try {
+        const { data } = await http.get(`/api/public/landing-pages/${encodeURIComponent(String(slug))}`)
+        const item = data.item
+        if (item) {
+          setPageData(item)
+        }
+      } catch (err) {
+        console.error(err)
       }
       setLoading(false)
     }
@@ -41,23 +39,15 @@ export default function LandingPage() {
     setSubmitStatus('idle');
 
     try {
-      const response = await fetch('/api/inquiries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          product_interest: pageData.title || pageData.hero_headline || 'Landing Page Inquiry',
-          source: `landing_page_${slug}`
-        })
+      await http.post('/api/inquiries', {
+        ...formData,
+        product_interest: pageData.title || pageData.hero_headline || 'Landing Page Inquiry',
+        source: `landing_page_${slug}`
       });
 
-      if (response.ok) {
-        setSubmitStatus('success');
-        setFormData({ name: '', company: '', email: '', quantity: '', message: '' });
-        setTimeout(() => setSubmitStatus('idle'), 5000);
-      } else {
-        setSubmitStatus('error');
-      }
+      setSubmitStatus('success');
+      setFormData({ name: '', company: '', email: '', quantity: '', message: '' });
+      setTimeout(() => setSubmitStatus('idle'), 5000);
     } catch {
       setSubmitStatus('error');
     } finally {

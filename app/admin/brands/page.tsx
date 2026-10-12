@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { adminFetch } from '@/lib/admin/api-client'
 import { X, Plus, Edit2, Trash2, Loader2, Save, Settings, GripVertical, CheckCircle2 } from 'lucide-react'
 import { CategoryManager } from '@/components/admin/CategoryManager'
 import { ImagePicker } from '@/components/admin/ImagePicker'
@@ -35,10 +35,8 @@ export default function BrandsCMS() {
   const fetchBrands = async () => {
     setLoading(true)
     try {
-      const supabase = createClient()
-      const { data, error } = await supabase.from('signature_brands').select('*').order('sort_order', { ascending: true })
-      if (error) console.error("Brands fetch error", error)
-      if (data) setBrands(data)
+      const { items } = await adminFetch<{ items: any[] }>('/api/admin/data/signature_brands')
+      if (items) setBrands(items)
     } catch (err) {
       console.error(err)
     } finally {
@@ -48,9 +46,8 @@ export default function BrandsCMS() {
 
   const fetchBrandTypes = async () => {
     try {
-      const supabase = createClient()
-      const { data } = await supabase.from('brand_types').select('*').order('name', { ascending: true })
-      if (data) setBrandTypes(data)
+      const { items } = await adminFetch<{ items: any[] }>('/api/admin/data/brand_types')
+      if (items) setBrandTypes(items)
     } catch (err) {
       console.error(err)
     }
@@ -80,20 +77,17 @@ export default function BrandsCMS() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
-    const supabase = createClient()
     try {
       if (currentBrand.id) {
-        const { error } = await supabase.from('signature_brands').update(currentBrand).eq('id', currentBrand.id)
-        if (error) throw error
+        await adminFetch(`/api/admin/data/signature_brands/${currentBrand.id}`, { method: 'PATCH', body: JSON.stringify(currentBrand) })
       } else {
-        const { error } = await supabase.from('signature_brands').insert([currentBrand])
-        if (error) throw error
+        await adminFetch('/api/admin/data/signature_brands', { method: 'POST', body: JSON.stringify(currentBrand) })
       }
       setIsModalOpen(false)
       fetchBrands()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Save error:', error)
-      alert("Failed to save brand.")
+      alert(`Failed to save brand. ${error?.message || ''}`)
     } finally {
       setSaving(false)
     }
@@ -102,8 +96,7 @@ export default function BrandsCMS() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this brand?")) return
     try {
-      const supabase = createClient()
-      await supabase.from('signature_brands').delete().eq('id', id)
+      await adminFetch(`/api/admin/data/signature_brands/${id}`, { method: 'DELETE' })
       fetchBrands()
     } catch (err) {
       console.error(err)
@@ -164,12 +157,13 @@ export default function BrandsCMS() {
     setBrands(reordered)
     handleDragEnd()
 
-    // Persist to Supabase
+    // Persist via the admin API
     setSavingOrder(true)
     try {
-      const supabase = createClient()
-      const updates = reordered.map(b => supabase.from('signature_brands').update({ sort_order: b.sort_order }).eq('id', b.id))
-      await Promise.all(updates)
+      await adminFetch('/api/admin/data/signature_brands/reorder', {
+        method: 'PATCH',
+        body: JSON.stringify({ items: reordered.map(b => ({ id: b.id, sort_order: b.sort_order })) }),
+      })
       setOrderSaved(true)
       setTimeout(() => setOrderSaved(false), 2500)
     } catch (err) {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { adminFetch, uploadAdminFile } from '@/lib/admin/api-client'
 import { Terminal, AlertCircle, RefreshCw, Plus, Image as ImageIcon, Video, Trash2, Edit2, Loader2, UploadCloud } from 'lucide-react'
 import { ImagePicker } from '@/components/admin/ImagePicker'
 
@@ -19,16 +19,9 @@ export default function HomepageCMS() {
     setLoading(true)
     setError(null)
     try {
-      const supabase = createClient()
-      const { data, error: fetchErr } = await supabase.from('slides').select('*').order('sort_order')
-      
-      if (fetchErr) {
-        console.error("Slides Fetch Error details:", fetchErr)
-        setError(`${fetchErr.message} (${fetchErr.code || 'No code'}). If this is a 401/403, check your RLS policies in Supabase.`);
-      }
-
-      if (data) {
-        setSlides(data)
+      const { items } = await adminFetch<{ items: any[] }>('/api/admin/data/slides')
+      if (items) {
+        setSlides(items)
       }
     } catch (e: any) {
       console.log(e)
@@ -45,26 +38,21 @@ export default function HomepageCMS() {
   const handleDelete = async (id: string) => {
     if (!confirm("Remove this slide?")) return
     try {
-       const supabase = createClient()
-       const { error: deleteErr } = await supabase.from('slides').delete().eq('id', id)
-       if (!deleteErr) {
-         fetchSlides()
-       } else {
-         alert("Failed to delete slide: " + deleteErr.message)
-       }
-    } catch (err) {
+       await adminFetch(`/api/admin/data/slides/${id}`, { method: 'DELETE' })
+       fetchSlides()
+    } catch (err: any) {
        console.error(err)
+       alert("Failed to delete slide: " + (err.message || 'Unknown error'))
     }
   }
 
   const handleSaveSlide = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
     try {
       if (editingSlide.id) {
-        await supabase.from('slides').update(editingSlide).eq('id', editingSlide.id)
+        await adminFetch(`/api/admin/data/slides/${editingSlide.id}`, { method: 'PATCH', body: JSON.stringify(editingSlide) })
       } else {
-        await supabase.from('slides').insert([editingSlide])
+        await adminFetch('/api/admin/data/slides', { method: 'POST', body: JSON.stringify(editingSlide) })
       }
       setEditingSlide(null)
       fetchSlides()
@@ -80,13 +68,8 @@ export default function HomepageCMS() {
     
     try {
       const file = e.target.files[0]
-      const supabase = createClient()
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${Math.random()}-${Date.now()}.${fileExt}`
-      const { error } = await supabase.storage.from('harven_assets').upload(fileName, file)
-      if (error) throw error
-      const { data } = supabase.storage.from('harven_assets').getPublicUrl(fileName)
-      setEditingSlide({...editingSlide, video_url: data.publicUrl})
+      const { publicUrl } = await uploadAdminFile(file)
+      setEditingSlide({...editingSlide, video_url: publicUrl})
     } catch (err) {
       console.error(err)
       alert("Failed to upload video. Ensure 'harven_assets' bucket exists and allows uploads.")
@@ -120,8 +103,8 @@ export default function HomepageCMS() {
                <button onClick={fetchSlides} className="flex items-center gap-2 px-4 py-2 bg-terracotta/10 rounded-lg text-xs font-bold hover:bg-terracotta/20 transition-colors">
                  <RefreshCw size={14} /> Try Again
                </button>
-               <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 border border-terracotta/20 rounded-lg text-xs font-bold hover:bg-terracotta/5 transition-colors">
-                 Open Supabase Dashboard
+               <a href="https://cloud.mongodb.com" target="_blank" rel="noopener noreferrer"className="flex items-center gap-2 px-4 py-2 border border-terracotta/20 rounded-lg text-xs font-bold hover:bg-terracotta/5 transition-colors">
+                 Open MongoDB Atlas
                </a>
             </div>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { adminFetch } from '@/lib/admin/api-client'
 import { LayoutDashboard, FileText, Image as ImageIcon, Box, Bot, Inbox, Settings, Terminal, RefreshCw } from 'lucide-react'
 
 export default function AdminDashboard() {
@@ -23,31 +23,16 @@ export default function AdminDashboard() {
     setLoading(true)
     setError(null)
     try {
-      const supabase = createClient()
-      
-      // Attempt to fetch data from different tables to verify connection
-      const [totalRes, newRes, lpRes, inqRes] = await Promise.all([
-        supabase.from('inquiries').select('*', { count: 'exact', head: true }),
-        supabase.from('inquiries').select('*', { count: 'exact', head: true }).gte('created_at', new Date(new Date().setHours(0,0,0,0)).toISOString()),
-        supabase.from('landing_pages').select('*', { count: 'exact', head: true }).eq('is_published', true),
-        supabase.from('inquiries').select('*').order('created_at', { ascending: false }).limit(5)
-      ])
-
-      const anyErr = totalRes.error || newRes.error || lpRes.error || inqRes.error
-
-      if (anyErr) {
-        console.error("Supabase Dashboard Error:", anyErr)
-        setError(`${anyErr.message} (${anyErr.code || 'ERR'}). Please check if RLS is enabled or if tables exist.`);
-      }
+      const data = await adminFetch<{ totalInquiries: number; newToday: number; activeLandingPages: number; recentInquiries: any[] }>('/api/admin/dashboard')
 
       setStats({
-        totalInquiries: totalRes.count || 0,
-        newToday: newRes.count || 0,
-        activeLandingPages: lpRes.count || 0,
-        chatbotInteractions: 0 
+        totalInquiries: data.totalInquiries || 0,
+        newToday: data.newToday || 0,
+        activeLandingPages: data.activeLandingPages || 0,
+        chatbotInteractions: 0
       })
 
-      if (inqRes.data) setRecentInquiries(inqRes.data)
+      if (data.recentInquiries) setRecentInquiries(data.recentInquiries)
 
     } catch (err: any) {
       console.error(err)

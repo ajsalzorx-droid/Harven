@@ -5,7 +5,7 @@ import { BrandHero } from '@/components/brands/BrandHero'
 import { BrandSelector } from '@/components/brands/BrandSelector'
 import { BrandSection } from '@/components/brands/BrandSection'
 
-import { createPublicClient } from '@/lib/supabase/public'
+import { getActiveSignatureBrands } from '@/lib/db/queries'
 
 export const revalidate = 60 // Enable ISR
 
@@ -15,10 +15,7 @@ export const metadata = {
 }
 
 export default async function BrandsPage() {
-  const supabase = createPublicClient()
-  const dbBrands = supabase 
-    ? (await supabase.from('signature_brands').select('*').eq('is_active', true).order('sort_order', { ascending: true })).data 
-    : []
+  const dbBrands = await getActiveSignatureBrands()
 
   // Inject database products into the static Brand descriptions
   const dynamicBrandsData = BRANDS_DATA.map(brand => {

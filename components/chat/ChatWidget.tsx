@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import { http, getErrorMessage } from '@/lib/http'
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, X, Send, Bot, User, Loader2 } from 'lucide-react';
 
@@ -36,14 +37,8 @@ export function ChatWidget() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [...messages, userMessage] }),
-      });
-
-      const data = await response.json();
-      if (response.ok && data.content) {
+      const { data } = await http.post('/api/chat', { messages: [...messages, userMessage] }, { timeout: 60000 });
+      if (data.content) {
         setMessages(prev => [...prev, { role: 'assistant', content: data.content }]);
       } else {
         const errorMsg = data.details || data.error || "Invalid response from server";
@@ -51,7 +46,7 @@ export function ChatWidget() {
       }
     } catch (error: any) {
       console.error("Chat error:", error);
-      const friendlyError = error.message.includes("API_KEY") 
+      const friendlyError = getErrorMessage(error).includes("API_KEY") 
         ? "The AI assistant is not correctly configured (Missing API Key). Please check site settings."
         : "I'm currently experiencing a high volume of requests. Please try again in a moment or contact us at harvenllc@gmail.com.";
       

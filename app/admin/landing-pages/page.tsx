@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { Plus, Edit, Trash2, ExternalLink, Loader2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { adminFetch } from '@/lib/admin/api-client'
 
 export default function LandingPagesList() {
   const [pages, setPages] = useState<any[]>([])
@@ -12,11 +12,10 @@ export default function LandingPagesList() {
 
   const fetchPages = async () => {
     setLoading(true)
-    const supabase = createClient()
-    const { data, error } = await supabase.from('landing_pages').select('*').order('created_at', { ascending: false })
-    if (data) {
-      setPages(data)
-    } else {
+    try {
+      const { items } = await adminFetch<{ items: any[] }>('/api/admin/data/landing_pages')
+      setPages(items || [])
+    } catch (error) {
       console.error(error)
     }
     setLoading(false)
@@ -28,8 +27,11 @@ export default function LandingPagesList() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this page?')) return;
-    const supabase = createClient()
-    await supabase.from('landing_pages').delete().eq('id', id)
+    try {
+      await adminFetch(`/api/admin/data/landing_pages/${id}`, { method: 'DELETE' })
+    } catch (err: any) {
+      alert("Error deleting page: " + (err.message || 'Unknown error'))
+    }
     fetchPages()
   }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { adminFetch } from '@/lib/admin/api-client'
 import { X, Plus, Edit2, Trash2, Loader2, Save, Settings, GripVertical, CheckCircle2 } from 'lucide-react'
 import { CategoryManager } from '@/components/admin/CategoryManager'
 import { ImagePicker } from '@/components/admin/ImagePicker'
@@ -31,9 +31,8 @@ export default function ProductsCMS() {
   const fetchProducts = async () => {
     setLoading(true)
     try {
-      const supabase = createClient()
-      const { data, error } = await supabase.from('products').select('*').order('sort_order', { ascending: true })
-      if (data) setProducts(data)
+      const { items } = await adminFetch<{ items: any[] }>('/api/admin/products')
+      if (items) setProducts(items)
     } catch (err) {
       console.error(err)
     } finally {
@@ -43,9 +42,8 @@ export default function ProductsCMS() {
 
   const fetchCategories = async () => {
     try {
-      const supabase = createClient()
-      const { data } = await supabase.from('product_categories').select('*').order('name', { ascending: true })
-      if (data) setCategories(data)
+      const { items } = await adminFetch<{ items: any[] }>('/api/admin/data/product_categories')
+      if (items) setCategories(items)
     } catch (err) {
       console.error(err)
     }
@@ -67,26 +65,24 @@ export default function ProductsCMS() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
-    const supabase = createClient()
-    
+
     try {
       if (currentProduct.id) {
-        const { error } = await supabase
-          .from('products')
-          .update(currentProduct)
-          .eq('id', currentProduct.id)
-        if (error) throw error
+        await adminFetch(`/api/admin/products/${currentProduct.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(currentProduct),
+        })
       } else {
-        const { error } = await supabase
-          .from('products')
-          .insert([currentProduct])
-        if (error) throw error
+        await adminFetch('/api/admin/products', {
+          method: 'POST',
+          body: JSON.stringify(currentProduct),
+        })
       }
       setIsModalOpen(false)
       fetchProducts()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Save error:', error)
-      alert("Failed to save product.")
+      alert(`Failed to save product. ${error?.message || ''}`)
     } finally {
       setSaving(false)
     }
@@ -95,12 +91,12 @@ export default function ProductsCMS() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this product?")) return
     try {
-       const supabase = createClient()
-       await supabase.from('products').delete().eq('id', id)
+       await adminFetch(`/api/admin/products/${id}`, { method: 'DELETE' })
        setIsModalOpen(false)
        fetchProducts()
-    } catch (err) {
+    } catch (err: any) {
        console.error(err)
+       alert(`Failed to delete product. ${err?.message || ''}`)
     }
   }
 
@@ -141,14 +137,13 @@ export default function ProductsCMS() {
     setProducts(reordered)
     handleDragEnd()
 
-    // Persist to Supabase
+    // Persist via the admin API
     setSavingOrder(true)
     try {
-      const supabase = createClient()
-      const updates = reordered.map(p =>
-        supabase.from('products').update({ sort_order: p.sort_order }).eq('id', p.id)
-      )
-      await Promise.all(updates)
+      await adminFetch('/api/admin/products/reorder', {
+        method: 'PATCH',
+        body: JSON.stringify({ items: reordered.map(p => ({ id: p.id, sort_order: p.sort_order })) }),
+      })
       setOrderSaved(true)
       setTimeout(() => setOrderSaved(false), 2500)
     } catch (err) {

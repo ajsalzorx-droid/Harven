@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react'
+import { http } from '@/lib/http'
 import { motion, AnimatePresence } from 'framer-motion'
-import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 
@@ -41,22 +41,22 @@ const DEFAULT_SLIDES: Slide[] = [
   }
 ];
 
-export function HeroSlider() {
-  const [slides, setSlides] = useState<Slide[]>(DEFAULT_SLIDES)
+export function HeroSlider({ initialSlides }: { initialSlides?: Slide[] } = {}) {
+  const [slides, setSlides] = useState<Slide[]>(initialSlides && initialSlides.length > 0 ? initialSlides : DEFAULT_SLIDES)
   const [currentIndex, setCurrentIndex] = useState(0)
 
   // Fetch or fallback dummy data
   useEffect(() => {
+    if (initialSlides) return // already loaded from the database on the server
     const fetchSlides = async () => {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from('slides')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true })
-
-      if (data && data.length > 0) {
-        setSlides(data)
+      try {
+        const { data } = await http.get('/api/public/slides')
+        const items = data.items
+        if (items && items.length > 0) {
+          setSlides(items)
+        }
+      } catch (err) {
+        console.error(err)
       }
     }
     fetchSlides()

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { UploadCloud, Link as LinkIcon, Image as ImageIcon, Loader2, X } from 'lucide-react';
 import { MediaLibrary } from './MediaLibrary';
-import { createClient } from '@/lib/supabase/client';
+import { uploadAdminFile } from '@/lib/admin/api-client';
 
 interface ImagePickerProps {
   label?: string;
@@ -14,7 +14,7 @@ interface ImagePickerProps {
 }
 
 export function ImagePicker({ label, value, onChange, className = "", placeholder = "https://..." }: ImagePickerProps) {
-  const [activeMode, setActiveMode] = useState<'url' | 'upload' | 'media'>(value && !value.includes('supabase.co') ? 'url' : 'upload');
+  const [activeMode, setActiveMode] = useState<'url' | 'upload' | 'media'>(value && !value.startsWith('/api/media/') && !value.includes('res.cloudinary.com') ? 'url' : 'upload');
   const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -25,15 +25,8 @@ export function ImagePicker({ label, value, onChange, className = "", placeholde
     setUploading(true);
     try {
       const file = e.target.files[0];
-      const supabase = createClient();
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}-${Date.now()}.${fileExt}`;
-      
-      const { error } = await supabase.storage.from(bucketName).upload(fileName, file);
-      if (error) throw error;
-      
-      const { data } = supabase.storage.from(bucketName).getPublicUrl(fileName);
-      onChange(data.publicUrl);
+      const { publicUrl } = await uploadAdminFile(file);
+      onChange(publicUrl);
     } catch (err: any) {
       console.error('Upload error:', err);
       alert('Failed to upload image: ' + (err.message || 'Unknown error'));

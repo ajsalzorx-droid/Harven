@@ -3,27 +3,26 @@ import { HeroSlider } from '@/components/home/HeroSlider'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
-import { createPublicClient } from '@/lib/supabase/public'
+import { getActiveProducts, getActiveSignatureBrands, getActiveSlides } from '@/lib/db/queries'
 
 export const revalidate = 60 // Enable ISR to prevent 503 errors on Hostinger
 
 export default async function HomePage() {
   let stockItems = null;
   let signatureBrands = null;
+  let slides: any[] = [];
   
   try {
-    const supabase = createPublicClient()
+    // Fetch both collections in parallel
+    const [products, brands, dbSlides] = await Promise.all([
+      getActiveProducts(3),
+      getActiveSignatureBrands(3),
+      getActiveSlides()
+    ]);
+    slides = dbSlides;
     
-    if (supabase) {
-      // Fetch both tables in parallel
-      const [productsRes, brandsRes] = await Promise.all([
-        supabase.from('products').select('*').eq('is_active', true).order('sort_order', { ascending: true }).limit(3),
-        supabase.from('signature_brands').select('*').eq('is_active', true).order('sort_order', { ascending: true }).limit(3)
-      ]);
-      
-      stockItems = productsRes.data;
-      signatureBrands = brandsRes.data;
-    }
+    stockItems = products;
+    signatureBrands = brands;
   } catch (err) {
     console.error('Home Page Data Fetch Error:', err)
   }
@@ -37,7 +36,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <HeroSlider />
+      <HeroSlider initialSlides={slides} />
       
       {/* TRUST BAR */}
       <div className="bg-white px-4 sm:px-6 lg:px-16 py-8 sm:py-10 lg:py-14 flex flex-nowrap overflow-x-auto sm:flex-wrap items-center justify-start sm:justify-center gap-6 sm:gap-10 lg:gap-16 border-b border-cream-dark relative z-10 w-full no-scrollbar">

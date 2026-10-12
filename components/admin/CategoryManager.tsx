@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { adminFetch } from '@/lib/admin/api-client'
 import { X, Plus, Trash2, Loader2, Save } from 'lucide-react'
 
 interface CategoryManagerProps {
@@ -26,9 +26,8 @@ export function CategoryManager({ tableName, label, isOpen, onClose, onUpdate }:
   const fetchItems = async () => {
     setLoading(true)
     try {
-      const supabase = createClient()
-      const { data, error } = await supabase.from(tableName).select('*').order('name', { ascending: true })
-      if (data) setItems(data)
+      const { items } = await adminFetch<{ items: any[] }>(`/api/admin/data/${tableName}`)
+      if (items) setItems(items)
     } catch (err) {
       console.error(err)
     } finally {
@@ -41,9 +40,10 @@ export function CategoryManager({ tableName, label, isOpen, onClose, onUpdate }:
     if (!newItem.trim()) return
     setSaving(true)
     try {
-      const supabase = createClient()
-      const { error } = await supabase.from(tableName).insert([{ name: newItem.trim() }])
-      if (error) throw error
+      await adminFetch(`/api/admin/categories?table=${tableName}`, {
+        method: 'POST',
+        body: JSON.stringify({ name: newItem.trim() }),
+      })
       setNewItem('')
       fetchItems()
       if (onUpdate) onUpdate()
@@ -58,9 +58,7 @@ export function CategoryManager({ tableName, label, isOpen, onClose, onUpdate }:
   const handleDelete = async (id: string) => {
     if (!confirm(`Are you sure you want to delete this ${label.toLowerCase()}? Products using it might show as 'Other'.`)) return
     try {
-      const supabase = createClient()
-      const { error } = await supabase.from(tableName).delete().eq('id', id)
-      if (error) throw error
+      await adminFetch(`/api/admin/categories/${id}?table=${tableName}`, { method: 'DELETE' })
       fetchItems()
       if (onUpdate) onUpdate()
     } catch (err) {

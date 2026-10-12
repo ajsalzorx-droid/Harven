@@ -1,28 +1,22 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { requireAdmin, unauthorized } from '@/lib/auth/require-admin'
+import { handle } from '@/lib/db/admin-crud'
+import { getDb } from '@/lib/db/mongo'
+import { deleteMedia, findMedia, MEDIA_ID_RE } from '@/lib/db/media'
 
 export async function POST(req: Request) {
-  try {
-    const { fileName, bucketName } = await req.json()
+  if (!(await requireAdmin())) return unauthorized()
 
-    if (!fileName || !bucketName) {
-      return NextResponse.json({ error: 'Missing fileName or bucketName' }, { status: 400 })
-    }
-
-    const supabase = await createClient()
-
-    const { data, error } = await supabase.storage
-      .from(bucketName)
-      .remove([fileName])
-
-    if (error) {
-      console.error('Storage delete error:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    return NextResponse.json({ success: true, data })
-  } catch (err: any) {
-    console.error('Media delete API error:', err)
-    return NextResponse.json({ error: err.message || 'Unknown error' }, { status: 500 })
+  const body = await req.json().catch(() => null)
+  const fileName = body?.fileName
+  if (typeof fileName !== 'string' || !MEDIA_ID_RE.test(fileName)) {
+    return NextResponse.json({ error: 'Invalid fileName' }, { status: 400 })
   }
+
+  return handle(async () => {
+    const db = await getDb()
+    if (!(await findMedia(db, fileName))) return NextResponse.json({ error: 'File not found' }, { status: 404 })
+    await deleteMedia(db, fileName)
+    return NextResponse.json({ success: true })
+  })
 }

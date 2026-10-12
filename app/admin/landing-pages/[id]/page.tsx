@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { LandingPageEditor } from '@/components/admin/LandingPageEditor'
 import { Button } from '@/components/ui/Button'
 import { ArrowLeft, ExternalLink, Save, Loader2, Trash2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { adminFetch } from '@/lib/admin/api-client'
 
 export default function EditLandingPage() {
   const { id } = useParams()
@@ -20,16 +20,10 @@ export default function EditLandingPage() {
   useEffect(() => {
     if (isNew) return
     const fetchPage = async () => {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from('landing_pages')
-        .select('*')
-        .eq('id', id)
-        .single()
-      
-      if (data) {
-        setPageData(data)
-      } else {
+      try {
+        const { item } = await adminFetch<{ item: any }>(`/api/admin/data/landing_pages/${id}`)
+        setPageData(item)
+      } catch (error) {
         console.error("Error fetching landing page", error)
       }
       setLoading(false)
@@ -39,22 +33,15 @@ export default function EditLandingPage() {
 
   const handleSave = async (data: any) => {
     setSaving(true)
-    const supabase = createClient()
-    
-    if (isNew) {
-      const { error } = await supabase.from('landing_pages').insert([data])
-      if (error) {
-        alert("Error creating page: " + error.message)
+    try {
+      if (isNew) {
+        await adminFetch('/api/admin/data/landing_pages', { method: 'POST', body: JSON.stringify(data) })
       } else {
-        router.push('/admin/landing-pages')
+        await adminFetch(`/api/admin/data/landing_pages/${id}`, { method: 'PATCH', body: JSON.stringify(data) })
       }
-    } else {
-      const { error } = await supabase.from('landing_pages').update(data).eq('id', id)
-      if (error) {
-        alert("Error updating page: " + error.message)
-      } else {
-        router.push('/admin/landing-pages')
-      }
+      router.push('/admin/landing-pages')
+    } catch (error: any) {
+      alert(`Error ${isNew ? 'creating' : 'updating'} page: ` + (error.message || 'Unknown error'))
     }
     setSaving(false)
   }
@@ -63,15 +50,11 @@ export default function EditLandingPage() {
     if (!confirm("Are you sure you want to delete this landing page?")) return
     setSaving(true)
     try {
-      const supabase = createClient()
-      const { error } = await supabase.from('landing_pages').delete().eq('id', id)
-      if (error) {
-        alert("Error deleting page: " + error.message)
-      } else {
-        router.push('/admin/landing-pages')
-      }
-    } catch (err) {
+      await adminFetch(`/api/admin/data/landing_pages/${id}`, { method: 'DELETE' })
+      router.push('/admin/landing-pages')
+    } catch (err: any) {
       console.error(err)
+      alert("Error deleting page: " + (err.message || 'Unknown error'))
     } finally {
       setSaving(false)
     }

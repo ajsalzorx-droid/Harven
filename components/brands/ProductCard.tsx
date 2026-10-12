@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react'
+import { http, isHttpError } from '@/lib/http'
 import { MapPin, Shield, Package, CheckCircle2, Clock, Thermometer, Droplets, ArrowRight, X } from 'lucide-react'
 import { Product } from '@/config/brands.config'
 
@@ -25,29 +26,22 @@ export function ProductCard({ product }: ProductCardProps) {
     e.preventDefault()
     setIsSubmitting(true)
     try {
-      const response = await fetch('/api/inquiries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          product_interest: product.name,
-          source: 'signature_brand'
-        }),
+      await http.post('/api/inquiries', {
+        ...formData,
+        product_interest: product.name,
+        source: 'signature_brand'
       })
 
-      if (response.ok) {
         setIsSubmitted(true)
         setTimeout(() => {
           setShowModal(false)
           setIsSubmitted(false)
           setFormData({ name: '', company: '', email: '', phone: '', quantity: '', message: '' })
         }, 2000)
-      } else {
-        alert("Failed to send inquiry. Please try again.")
-      }
     } catch (err) {
       console.error(err)
-      alert("An error occurred. Please try again.")
+      // Server answered with an error vs. network failure
+      alert(isHttpError(err) && err.response ? "Failed to send inquiry. Please try again." : "An error occurred. Please try again.")
     } finally {
       setIsSubmitting(false)
     }

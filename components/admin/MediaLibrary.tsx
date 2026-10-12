@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { adminFetch, uploadAdminFile } from '@/lib/admin/api-client';
 import { X, UploadCloud, Loader2, Trash2, CheckCircle2, Image as ImageIcon, Search } from 'lucide-react';
 
 interface MediaLibraryProps {
@@ -22,24 +22,8 @@ export function MediaLibrary({ isOpen, onClose, onSelect }: MediaLibraryProps) {
   const fetchFiles = async () => {
     setLoading(true);
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase.storage.from(bucketName).list('', {
-        limit: 100,
-        offset: 0,
-        sortBy: { column: 'created_at', order: 'desc' },
-      });
-
-      if (error) throw error;
-
-      if (data) {
-        const filesWithUrls = await Promise.all(
-          data.map(async (file) => {
-            const { data: urlData } = supabase.storage.from(bucketName).getPublicUrl(file.name);
-            return { ...file, url: urlData.publicUrl };
-          })
-        );
-        setFiles(filesWithUrls);
-      }
+      const { files } = await adminFetch<{ files: any[] }>('/api/admin/media');
+      if (files) setFiles(files);
     } catch (err) {
       console.error('Error fetching media:', err);
     } finally {
@@ -58,13 +42,8 @@ export function MediaLibrary({ isOpen, onClose, onSelect }: MediaLibraryProps) {
     setUploading(true);
     try {
       const file = e.target.files[0];
-      const supabase = createClient();
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}-${Date.now()}.${fileExt}`;
-      
-      const { error } = await supabase.storage.from(bucketName).upload(fileName, file);
-      if (error) throw error;
-      
+      await uploadAdminFile(file);
+
       await fetchFiles();
     } catch (err) {
       console.error('Upload error:', err);
@@ -77,13 +56,10 @@ export function MediaLibrary({ isOpen, onClose, onSelect }: MediaLibraryProps) {
   const handleDelete = async (fileName: string) => {
     if (!confirm('Are you sure you want to delete this image?')) return;
     try {
-      const res = await fetch('/api/media/delete', {
+      await adminFetch('/api/media/delete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileName, bucketName }),
       });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || 'Delete failed');
       await fetchFiles();
     } catch (err: any) {
       console.error('Delete error:', err);
