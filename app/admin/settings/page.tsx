@@ -24,7 +24,7 @@ export default function SettingsCMS() {
       return setStatus({ type: 'error', message: 'New password and confirmation do not match' })
     }
     if (passwords.newPassword === passwords.currentPassword) {
-      return setStatus({ type: 'error', message: 'New password must be different from the current password' })
+      return setStatus({ type: 'error', message: 'New password must be different from the previous password' })
     }
 
     setSaving(true)
@@ -63,9 +63,9 @@ export default function SettingsCMS() {
 
       <form onSubmit={handleChangePassword} className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden p-6 md:p-10">
         <h3 className="font-display text-xl font-semibold text-forest-darker mb-6 border-b border-cream-dark pb-2">Change Password</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl">
-           <div className="flex flex-col gap-2 md:col-span-2 md:max-w-[calc(50%-0.75rem)]">
-             <label className="text-sm font-medium">Current Password</label>
+        <div className="flex flex-col gap-6 max-w-md">
+           <div className="flex flex-col gap-2">
+             <label className="text-sm font-medium">Previous Password</label>
              <input type="password" autoComplete="current-password" required className="p-3 bg-cream border border-cream-dark rounded-lg focus:outline-forest" value={passwords.currentPassword} onChange={(e) => updatePassword('currentPassword', e.target.value)} />
            </div>
            <div className="flex flex-col gap-2">
@@ -73,7 +73,7 @@ export default function SettingsCMS() {
              <input type="password" autoComplete="new-password" required minLength={8} maxLength={200} className="p-3 bg-cream border border-cream-dark rounded-lg focus:outline-forest" placeholder="At least 8 characters" value={passwords.newPassword} onChange={(e) => updatePassword('newPassword', e.target.value)} />
            </div>
            <div className="flex flex-col gap-2">
-             <label className="text-sm font-medium">Confirm New Password</label>
+             <label className="text-sm font-medium">Confirm Password</label>
              <input type="password" autoComplete="new-password" required className="p-3 bg-cream border border-cream-dark rounded-lg focus:outline-forest" value={passwords.confirmPassword} onChange={(e) => updatePassword('confirmPassword', e.target.value)} />
            </div>
         </div>
