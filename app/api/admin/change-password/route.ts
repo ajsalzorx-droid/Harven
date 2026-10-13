@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'New password and confirmation do not match' }, { status: 400 })
   }
   if (newPassword === currentPassword) {
-    return NextResponse.json({ error: 'New password must be different from the current password' }, { status: 400 })
+    return NextResponse.json({ error: 'New password must be different from the previous password' }, { status: 400 })
   }
 
   try {
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     if (!admin) return unauthorized()
 
     if (currentPassword.length > 200 || !(await verifyPassword(currentPassword, admin.password_hash))) {
-      return NextResponse.json({ error: 'Current password is incorrect' }, { status: 400 })
+      return NextResponse.json({ error: 'Previous password is incorrect' }, { status: 400 })
     }
 
     await db.collection<AdminUserDoc>('admin_users').updateOne(
