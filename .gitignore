@@ -40,10 +40,26 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Large Assets
-/public/videos/*
-!/public/videos/*.mp4
+# Large Assets — videos live on Cloudinary, not in git
+/public/videos/
 /Videos/
+*.mp4
+
+# Design source files & raw photos (keep locally, never commit — they made
+# the repo ~280 MB and deploys timed out while cloning)
+/IMAGES26/
+/Products/
+__MACOSX/
+*.psd
+*.eps
+*.ai
+/HARVEN-Profile.pdf
+/public/brands/WhatsApp*
+
+# One-off PDF extraction helpers
+/read_pdf.js
+/read_pdf.py
+/pdf_text.txt
 *.zip
 *.png
 *.svg
