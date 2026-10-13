@@ -13,6 +13,8 @@ interface CategoryManagerProps {
   onUpdate?: () => void
 }
 
+
+
 export function CategoryManager({ tableName, label, isOpen, onClose, onUpdate }: CategoryManagerProps) {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -86,14 +88,14 @@ export function CategoryManager({ tableName, label, isOpen, onClose, onUpdate }:
 
         <div className="p-6">
           <form onSubmit={handleAdd} className="flex gap-2 mb-6">
-            <input 
+            <input
               required
               value={newItem}
               onChange={(e) => setNewItem(e.target.value)}
               placeholder={`New ${label} name...`}
               className="flex-1 p-3 bg-cream rounded-xl border border-transparent focus:border-sage focus:outline-none text-[0.85rem]"
             />
-            <button 
+            <button
               disabled={saving}
               className="bg-forest text-white px-4 rounded-xl hover:bg-forest-deep transition-all flex items-center justify-center min-w-[44px]"
             >
@@ -112,7 +114,7 @@ export function CategoryManager({ tableName, label, isOpen, onClose, onUpdate }:
             ) : items.map((item) => (
               <div key={item.id} className="flex items-center justify-between p-3 bg-cream/30 rounded-xl group hover:bg-cream/50 transition-colors">
                 <span className="text-[0.9rem] text-text-dark">{item.name}</span>
-                <button 
+                <button
                   onClick={() => handleDelete(item.id)}
                   className="p-2 text-text-muted hover:text-terracotta opacity-0 group-hover:opacity-100 transition-all"
                 >
