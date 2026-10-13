@@ -5,6 +5,7 @@ import { UploadCloud, Link as LinkIcon, Image as ImageIcon, Loader2, X } from 'l
 import { MediaLibrary } from './MediaLibrary';
 import { uploadAdminFile } from '@/lib/admin/api-client';
 
+
 interface ImagePickerProps {
   label?: string;
   value: string;
@@ -50,21 +51,21 @@ export function ImagePicker({ label, value, onChange, className = "", placeholde
 
       {/* Mode Selector */}
       <div className="flex bg-cream/50 p-1 rounded-xl border border-cream-dark self-start">
-        <button 
+        <button
           type="button"
           onClick={() => setActiveMode('upload')}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[0.7rem] font-bold uppercase tracking-wider transition-all ${activeMode === 'upload' ? 'bg-white text-forest shadow-sm' : 'text-text-muted hover:text-text-dark'}`}
         >
           <UploadCloud size={14} /> Upload
         </button>
-        <button 
+        <button
           type="button"
           onClick={() => setActiveMode('url')}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[0.7rem] font-bold uppercase tracking-wider transition-all ${activeMode === 'url' ? 'bg-white text-forest shadow-sm' : 'text-text-muted hover:text-text-dark'}`}
         >
           <LinkIcon size={14} /> URL
         </button>
-        <button 
+        <button
           type="button"
           onClick={() => setIsMediaLibraryOpen(true)}
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[0.7rem] font-bold uppercase tracking-wider text-text-muted hover:text-text-dark transition-all"
@@ -77,22 +78,22 @@ export function ImagePicker({ label, value, onChange, className = "", placeholde
         <div className="flex-1 relative">
           {activeMode === 'upload' ? (
             <div className="relative group">
-               <input 
-                 type="file" 
-                 accept="image/*"
-                 onChange={handleFileUpload}
-                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                 disabled={uploading}
-               />
-               <div className={`w-full p-3 bg-cream rounded-xl border border-dashed border-cream-dark flex items-center justify-center gap-3 transition-all ${uploading ? 'opacity-50' : 'group-hover:bg-cream-dark'}`}>
-                 {uploading ? <Loader2 className="animate-spin text-forest" size={20} /> : <UploadCloud className="text-text-muted" size={20} />}
-                 <span className="text-[0.85rem] text-text-muted font-medium">
-                   {uploading ? 'Processing asset...' : (value ? 'Click to replace file' : 'Click to upload local file')}
-                 </span>
-               </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                disabled={uploading}
+              />
+              <div className={`w-full p-3 bg-cream rounded-xl border border-dashed border-cream-dark flex items-center justify-center gap-3 transition-all ${uploading ? 'opacity-50' : 'group-hover:bg-cream-dark'}`}>
+                {uploading ? <Loader2 className="animate-spin text-forest" size={20} /> : <UploadCloud className="text-text-muted" size={20} />}
+                <span className="text-[0.85rem] text-text-muted font-medium">
+                  {uploading ? 'Processing asset...' : (value ? 'Click to replace file' : 'Click to upload local file')}
+                </span>
+              </div>
             </div>
           ) : (
-            <input 
+            <input
               value={value}
               onChange={(e) => onChange(e.target.value)}
               placeholder={placeholder}
@@ -101,7 +102,7 @@ export function ImagePicker({ label, value, onChange, className = "", placeholde
           )}
 
           {value && (
-            <button 
+            <button
               type="button"
               onClick={() => onChange('')}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-terracotta transition-colors"
@@ -113,18 +114,18 @@ export function ImagePicker({ label, value, onChange, className = "", placeholde
 
         {value && (
           <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-black/5 bg-cream flex-shrink-0 shadow-inner group">
-             <img src={value} alt="Preview" className="w-full h-full object-cover" />
-             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <ImageIcon size={14} className="text-white" />
-             </div>
+            <img src={value} alt="Preview" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <ImageIcon size={14} className="text-white" />
+            </div>
           </div>
         )}
       </div>
 
       {/* Media Library Modal */}
-      <MediaLibrary 
-        isOpen={isMediaLibraryOpen} 
-        onClose={() => setIsMediaLibraryOpen(false)} 
+      <MediaLibrary
+        isOpen={isMediaLibraryOpen}
+        onClose={() => setIsMediaLibraryOpen(false)}
         onSelect={handleMediaSelect}
       />
     </div>
